@@ -1,30 +1,34 @@
 using UnityEngine;
-using UnityEngine.Events;
 using System.Collections.Generic;
+
+[System.Serializable]
+public class Signal
+{
+    public string name; // Name of the signal
+    [Range(0, 23)] public int hour; // Hour of the signal (0-23)
+    [Range(0, 59)] public int minute; // Minute of the signal (0-59)
+}
 
 public class DayCycleClock : MonoBehaviour
 {
     [Header("Clock Settings")]
     [Range(0, 24)]
-    public float currentTime; // Represents the current hour in the 24-hour format
-    public float secondsPerDay = 60f; // Total duration of a day in real seconds
+    public float currentTime; // Current time in hours
+    public float secondsPerDay = 60f; // Duration of one full day in seconds
 
-    [Header("Signal Times")]
-    public List<float> signalTimes = new List<float>(); // List of times to emit signals
+    [Header("Signals")]
+    public List<Signal> signals = new List<Signal>(); // List of signals with time and name
 
-    public event System.Action<float> OnTimeSignal; // Event broadcasted with the time of the signal
+    public event System.Action<string> OnSignalTriggered; // Event triggered with the signal name
 
-    private float timeIncrement;
-    private HashSet<float> triggeredSignals = new HashSet<float>(); // Track already triggered signals for this day
-
-    void Start()
-    {
-        // Calculate time increment per frame
-        timeIncrement = 24f / (secondsPerDay / Time.deltaTime);
-    }
+    private HashSet<string> triggeredSignals = new HashSet<string>(); // Track triggered signals
+    private const float TimeTolerance = 1f / 60f; // Time window tolerance (1 second)
 
     void Update()
     {
+        // Recalculate timeIncrement to respect changes in secondsPerDay
+        float timeIncrement = 24f / secondsPerDay;
+
         // Increment the clock
         currentTime += timeIncrement * Time.deltaTime;
 
@@ -32,32 +36,30 @@ public class DayCycleClock : MonoBehaviour
         if (currentTime >= 24f)
         {
             currentTime = 0f;
-            triggeredSignals.Clear(); // Reset signals for the new day
+            triggeredSignals.Clear(); // Reset for the new day
         }
 
-        // Print current time in AM/PM format
-        PrintCurrentTime();
-
-        // Check signal times
-        foreach (float signalTime in signalTimes)
+        // Check and trigger signals
+        foreach (var signal in signals)
         {
-            if (!triggeredSignals.Contains(signalTime) && Mathf.Approximately(currentTime, signalTime))
+            float signalTime = signal.hour + (signal.minute / 60f); // Convert hour and minute to time in hours
+            if (!triggeredSignals.Contains(signal.name) && Mathf.Abs(currentTime - signalTime) <= TimeTolerance)
             {
-                triggeredSignals.Add(signalTime);
-                OnTimeSignal?.Invoke(signalTime); // Emit the signal with the time
+                triggeredSignals.Add(signal.name);
+                OnSignalTriggered?.Invoke(signal.name); // Trigger the signal by name
+                Debug.Log($"Signal Triggered: {signal.name} at {signal.hour:D2}:{signal.minute:D2}");
             }
         }
     }
 
-    private void PrintCurrentTime()
+    public string GetFormattedTime()
     {
         int hours = Mathf.FloorToInt(currentTime);
         int minutes = Mathf.FloorToInt((currentTime - hours) * 60f);
         string period = hours >= 12 ? "PM" : "AM";
-
         int displayHours = hours % 12;
-        if (displayHours == 0) displayHours = 12; // Handle midnight and noon
+        if (displayHours == 0) displayHours = 12;
 
-        Debug.Log($"Current Time: {displayHours:D2}:{minutes:D2} {period}");
+        return $"{displayHours:D2}:{minutes:D2} {period}";
     }
 }

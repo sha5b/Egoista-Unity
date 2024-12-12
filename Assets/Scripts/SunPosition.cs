@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class SunPosition : MonoBehaviour
 {
-    public DayCycleClock clock; // Reference to your DayCycleClock
+    public DayCycleClock clock; // Reference to the DayCycleClock
     public Transform sun; // The directional light to control
 
     private void OnEnable()
     {
         if (clock != null)
         {
-            clock.OnTimeSignal += UpdateSunRotation;
+            clock.OnSignalTriggered += HandleSignal; // Subscribe to the OnSignalTriggered event
         }
     }
 
@@ -17,22 +17,15 @@ public class SunPosition : MonoBehaviour
     {
         if (clock != null)
         {
-            clock.OnTimeSignal -= UpdateSunRotation;
+            clock.OnSignalTriggered -= HandleSignal; // Unsubscribe from the event
         }
     }
 
-    private void UpdateSunRotation(float signalTime)
+    private void HandleSignal(string signalName)
     {
-        // Map the time of day to a rotation angle
-        // 0 = Midnight, 6 = Sunrise, 12 = Noon, 18 = Sunset, 24 = Midnight
-        float angle = (signalTime / 24f) * 360f;
-
-        // Rotate the sun (directional light)
-        if (sun != null)
-        {
-            sun.localRotation = Quaternion.Euler(angle - 90f, 0f, 0f);
-            // Subtract 90 degrees to align the sun correctly (adjust as needed for your scene).
-        }
+        Debug.Log($"Signal received in SunPosition: {signalName}");
+        // Update the sun's rotation based on the current time
+        UpdateSunRotation(clock.currentTime);
     }
 
     private void Update()
@@ -40,8 +33,20 @@ public class SunPosition : MonoBehaviour
         if (clock != null && sun != null)
         {
             // Smoothly update the sun's rotation based on the current time
-            float angle = (clock.currentTime / 24f) * 360f;
+            UpdateSunRotation(clock.currentTime);
+        }
+    }
+
+    private void UpdateSunRotation(float time)
+    {
+        // Map the time of day to a rotation angle
+        float angle = (time / 24f) * 360f;
+
+        // Rotate the sun (directional light)
+        if (sun != null)
+        {
             sun.localRotation = Quaternion.Euler(angle - 90f, 0f, 0f);
+            // Subtract 90 degrees to align the sun correctly (adjust as needed for your scene).
         }
     }
 }
