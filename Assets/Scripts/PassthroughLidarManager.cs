@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.Features;
-using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
+using UnityEngine.XR.OpenXR.Features.OculusQuestSupport;
 using UnityEngine.XR.Management;
 using System.Collections.Generic;
 
@@ -61,7 +61,7 @@ public class PassthroughLidarManager : MonoBehaviour
         }
 
         // Check for Quest support feature
-        var questFeature = OpenXRSettings.Instance.GetFeature<MetaQuestFeature>();
+        var questFeature = OpenXRSettings.Instance.GetFeature<OculusQuestFeature>();
         return questFeature != null && questFeature.enabled;
     }
 
